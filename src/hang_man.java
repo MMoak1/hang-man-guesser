@@ -1,26 +1,23 @@
 import java.util.*;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Scanner;
+
 public class hang_man {
 
     public static void main(String[] args) {
         // TODO Auto-generated method stub
 
-
-        //set up to read data
+        // set up to read data
 
         Scanner input = new Scanner(System.in);
-        int choice;
-
-        System.out.println("lets play Hang man, do you want to guess the word, or for me to guess. enter 1 to guess enter 2 for me to guess");
-        choice=input.nextInt();
+        System.out.println(
+                "lets play Think of I hard word and I will guess it");
 
         File file = new File("src/words/5letterWords.txt");
         ArrayList<String> fiveletterwordslist = new ArrayList<>();
 
         try {
-        Scanner scanner = new Scanner(file);
+            Scanner scanner = new Scanner(file);
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
                 fiveletterwordslist.add(line);
@@ -30,271 +27,208 @@ public class hang_man {
             System.out.println("File not found: " + e.getMessage());
         }
 
+        String[] Hangmanpics = new String[7];
 
-        String [] Hangmanpics= new String [7];
+        Hangmanpics[0] = "|-----|\n" +
+                "      |\n" +
+                "      |\n" +
+                "      |\n" +
+                "      |\n" +
+                "=========";
 
-        Hangmanpics[0]=
-                """
-                        |-----|
-                              |
-                              |
-                              |
-                              |
-                        =========""";
+        Hangmanpics[1] = "|-----|\n" +
+                "O     |\n" +
+                "      |\n" +
+                "      |\n" +
+                "      |\n" +
+                "=========";
+        Hangmanpics[2] = "|-----|\n" +
+                "O     |\n" +
+                "|     |\n" +
+                "      |\n" +
+                "      |\n" +
+                "=========";
 
-        Hangmanpics[1]=
-                """
-                        |-----|
-                        O     |
-                              |
-                              |
-                              |
-                        =========""";
-        Hangmanpics[2]=
-                """
-                        |-----|
-                        O     |
-                        |     |
-                              |
-                              |
-                        =========""";
+        Hangmanpics[3] = "|-----|\n" +
+                "O     |\n" +
+                "/|     |\n" +
+                "      |\n" +
+                "      |\n" +
+                "=========";
 
-        Hangmanpics[3]=
-                """
-                         |-----|
-                         O     |
-                        /|     |
-                               |
-                               |
-                        =========""";
-        Hangmanpics[4]=
-                """
-                         |-----|
-                         O     |
-                        /|\\    |
-                               |
-                               |
-                        =========""";
-        Hangmanpics[5]=
-                """
-                         |-----|
-                         O     |
-                        /|\\    |
-                          \\    |
-                               |
-                        =========""";
-        Hangmanpics[6]=
-                """
-                         |-----|
-                         O     |
-                        /|\\    |
-                        / \\    |
-                               |
-                        =========""";
+        Hangmanpics[4] = "|-----|\n" +
+                "O     |\n" +
+                "/|\\    |\n" +
+                "      |\n" +
+                "      |\n" +
+                "=========";
+        Hangmanpics[5] = "|-----|\n" +
+                "O     |\n" +
+                "/|\\    |\n" +
+                "  \\    |\n" +
+                "      |\n" +
+                "=========";
+        Hangmanpics[6] = "|-----|\n" +
+                "O     |\n" +
+                "/|\\    |\n" +
+                "/ \\    |\n" +
+                "      |\n" +
+                "=========";
 
-
-        if(choice==2)
-        {
-            Guesser(fiveletterwordslist, Hangmanpics);
-        }
+        Guesser(fiveletterwordslist, Hangmanpics);
 
     }
 
-    public static int Guesser (ArrayList<String> listofwords, String [] pics)
-    {
-        Scanner input = new Scanner(System.in);
-        String BigString="";
-        char [] Bigstringchars;
-        char mostfrequent=0;
-        String correctguess;
-        int numcorrect;
-        int [] correctpostitions= new int [5];
-        int count=0;
-        int incorrectguess=0;
-        String [] rightletters= new String [26];
-        int checker=0;
-        boolean didwin=false;
-        String answer="";
-        int placer=0;
-        int correct=0;
+    public static int Guesser(ArrayList<String> listofwords, String[] pics) {
+        try (Scanner input = new Scanner(System.in)) {
+            String BigString = "";
+            char[] Bigstringchars;
+            char mostfrequent = 0;
+            String correctguess;
+            int numcorrect;
+            int[] correctpostitions = new int[5];
+            int count = 0;
+            int incorrectguess = 0;
+            String[] rightletters = new String[26];
+            int checker = 0;
+            boolean didwin = false;
+            String answer = "";
+            int placer = 0;
+            int correct = 0;
 
-		/*int length;
-		System.out.println("how many letters long is your word.");
-		length=input.nextInt();
-		*/
-        do
-        {
+            do {
 
-            String stringmostfrequent= ""+mostfrequent;
+                String stringmostfrequent = "" + mostfrequent;
 
-            rightletters[checker]=stringmostfrequent;
+                rightletters[checker] = stringmostfrequent;
 
-            BigString="";
+                BigString = "";
 
-            for(int i=0; i<listofwords.size();i++)
-            {
-                BigString+=listofwords.get(i);
-            }
-
-            for(int i=0; i<checker+1 ;i++)
-            {
-                BigString=BigString.replaceAll(rightletters[i],"");
-            }
-
-            Bigstringchars= BigString.toCharArray();
-            for(int i=0; i<Bigstringchars.length ;i++)
-            {
-                System.out.print(Bigstringchars[i]);
-            }
-            mostfrequent=mostFrequent(Bigstringchars,BigString.length());
-
-            System.out.println(mostfrequent);
-
-            System.out.println("My guess is "+ mostfrequent + " am I right? enter Y or N");
-            correctguess=input.next();
-
-            System.out.println(listofwords.size());
-
-            if(correctguess.equals("Y"))
-            {
-                System.out.println("Yes!, how many "+ mostfrequent+" are there");
-                numcorrect=input.nextInt();
-
-                for(int i=0; i<numcorrect; i++)
-                {
-                    System.out.println("what is the postistion of the correct guess "+(i+1));
-                    correctpostitions[i]=input.nextInt();
+                for (int i = 0; i < listofwords.size(); i++) {
+                    BigString += listofwords.get(i);
                 }
 
-                for(int j=0; j<numcorrect; j++)
-                {
+                for (int i = 0; i < checker + 1; i++) {
+                    BigString = BigString.replaceAll(rightletters[i], "");
+                }
 
+                Bigstringchars = BigString.toCharArray();
 
-                    for (int i=0; i<listofwords.size();i++)
-                    {
-                        char [] wordchars=(listofwords.get(i)).toCharArray();
+                mostfrequent = mostFrequent(Bigstringchars, BigString.length());
 
-                        if(wordchars[correctpostitions[j]-1]!=mostfrequent)
-                        {
-                            count++;
+                System.out.println("My guess is " + mostfrequent + " am I right? enter Y or N");
+                correctguess = input.next();
+
+                if (correctguess.equals("Y")) {
+                    System.out.println("Yes!, how many " + mostfrequent + " are there");
+                    numcorrect = input.nextInt();
+
+                    for (int i = 0; i < numcorrect; i++) {
+                        System.out.println("what is the postistion of the correct guess " + (i + 1));
+                        correctpostitions[i] = input.nextInt();
+                    }
+
+                    for (int j = 0; j < numcorrect; j++) {
+
+                        for (int i = 0; i < listofwords.size(); i++) {
+                            char[] wordchars = (listofwords.get(i)).toCharArray();
+
+                            if (wordchars[correctpostitions[j] - 1] != mostfrequent) {
+                                count++;
+                            }
+
+                            if (count > 0) {
+                                listofwords.remove(i);
+                                i--;
+                            }
+
+                            count = 0;
                         }
 
-                        if(count>0)
-                        {
+                    }
+
+                    for (int i = 0; i < listofwords.size(); i++) {
+                        char[] wordchars = (listofwords.get(i)).toCharArray();
+
+                        for (int j = 0; j < wordchars.length; j++) {
+
+                            for (int k = 0; k < correctpostitions.length; k++) {
+                                if (correctpostitions[k] - 1 == j) {
+                                    // do nothing
+                                }
+
+                                else if (correctpostitions[0] - 1 != j) {
+                                    if (wordchars[j] == mostfrequent) {
+                                        placer++;
+                                    }
+                                }
+                            }
+
+                        }
+
+                        if (placer > correctpostitions.length - 1) {
                             listofwords.remove(i);
                             i--;
                         }
 
-                        count=0;
+                        placer = 0;
+
+                    }
+
+                    if (listofwords.size() == 1) {
+                        didwin = true;
+                        answer = listofwords.get(0);
+                        break;
+
                     }
 
                 }
 
-                for (int i=0; i<listofwords.size();i++)
-                {
-                    char [] wordchars=(listofwords.get(i)).toCharArray();
+                else {
+                    System.out.println("darn I'll try better next time :( ");
 
+                    for (int i = 0; i < listofwords.size(); i++) {
+                        char[] wordchars = (listofwords.get(i)).toCharArray();
 
-                    for(int j=0;j<wordchars.length;j++)
-                    {
-
-                        for(int k=0; k<correctpostitions.length;k++)
-                        {
-                            if(correctpostitions[k]-1==j)
-                            {
-                                // do nothing
+                        for (int j = 0; j < wordchars.length; j++) {
+                            if (wordchars[j] == mostfrequent) {
+                                count++;
                             }
 
-                            else if(correctpostitions[0]-1!=j)
-                            {
-                                if(wordchars[j]==mostfrequent)
-                                {
-                                    placer++;
+                            if (count > 0) {
+                                if (i < 0) {
+                                    listofwords.remove(i);
+                                    i--;
                                 }
                             }
+
+                            count = 0;
+
                         }
 
                     }
 
-                    if(placer>correctpostitions.length-1)
-                    {
-                        listofwords.remove(i);
-                        i--;
-                    }
+                    incorrectguess++;
 
-                    placer=0;
-
+                    System.out.println(pics[incorrectguess]);
 
                 }
 
+                checker++;
 
+            } while (incorrectguess < 6);
 
-                System.out.println(listofwords);
-                if(listofwords.size()==1)
-                {
-                    didwin=true;
-                    answer=listofwords.get(0);
-                    break;
-
-                }
+            if (didwin) {
+                System.out.println("Yes! I did it the word was " + answer);
+                correct = 1;
 
             }
 
-            else
-            {
-                System.out.println("darn I'll try better next time :( ");
-
-                for (int i=0; i<listofwords.size();i++)
-                {
-                    char [] wordchars=(listofwords.get(i)).toCharArray();
-
-                    for(int j=0;j<wordchars.length;j++)
-                    {
-                        if(wordchars[j]==mostfrequent)
-                        {
-                            count++;
-                        }
-
-                        if(count>0)
-                        {
-                            if(i<0)
-                            {
-                                listofwords.remove(i);
-                                i--;
-                            }
-                        }
-
-                        count=0;
-
-                    }
-
-                }
-
-                System.out.println(listofwords);
-
-                incorrectguess++;
-
-                System.out.println(pics[incorrectguess]);
-
-
-            }
-
-            checker++;
-
-        }while(incorrectguess<6);
-
-        if(didwin)
-        {
-            System.out.println("Yes! I did it the word was "+ answer);
-            correct=1;
-
+            return correct;
         }
-
-        return correct;
     }
 
-    static char mostFrequent(char arr[], int n)
-    {
+    static char mostFrequent(char arr[], int n) {
         // Sort the array
         Arrays.sort(arr);
 
