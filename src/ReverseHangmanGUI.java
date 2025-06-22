@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
+import java.util.Arrays;
 
 public class ReverseHangmanGUI extends JFrame {
 
@@ -35,10 +36,34 @@ public class ReverseHangmanGUI extends JFrame {
     };
 
     public ReverseHangmanGUI() {
-        this.game = new ReverseHangmanGame();
-        this.revealedLetters = new char[5]; // <<< NEW: Initialize the array
+        // Prompt for word length
+        Integer wordLength = showWordLengthDialog();
+        if (wordLength == null) {
+            System.exit(0);
+        }
+
+        this.game = new ReverseHangmanGame(wordLength);
+        this.revealedLetters = new char[wordLength];
+        Arrays.fill(revealedLetters, '_');
         initializeGUI();
         startNewGame();
+    }
+
+    private Integer showWordLengthDialog() {
+        Object[] options = { "5", "6", "7" };
+        int choice = JOptionPane.showOptionDialog(null,
+                "How many letters is your word?",
+                "Word Length Selection",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        if (choice == JOptionPane.CLOSED_OPTION) {
+            return null;
+        }
+        return Integer.parseInt(options[choice].toString());
     }
 
     private void initializeGUI() {
@@ -74,7 +99,8 @@ public class ReverseHangmanGUI extends JFrame {
     private void handleCorrectGuess() {
         yesButton.setEnabled(false);
         noButton.setEnabled(false);
-        instructionLabel.setText("Great! Please provide details for letter '" + currentGuess + "':");
+        instructionLabel.setText(
+                "Great! For " + game.getWordLength() + "-letter word, provide details for '" + currentGuess + "':");
         positionPanel.setVisible(true);
         countInput.setText("");
         positionInput.setText("");
@@ -106,8 +132,10 @@ public class ReverseHangmanGUI extends JFrame {
             int[] positions = new int[numCorrect];
             for (int i = 0; i < numCorrect; i++) {
                 int pos = Integer.parseInt(posStrings[i]);
-                if (pos < 1 || pos > 5) {
-                    JOptionPane.showMessageDialog(this, "Positions must be between 1 and 5.", "Input Error",
+                if (pos < 1 || pos > game.getWordLength()) {
+                    JOptionPane.showMessageDialog(this,
+                            "Positions must be between 1 and " + game.getWordLength(),
+                            "Input Error",
                             JOptionPane.ERROR_MESSAGE);
                     return;
                 }
@@ -187,7 +215,9 @@ public class ReverseHangmanGUI extends JFrame {
 
         // Revealed word label
         revealedWordLabel = new JLabel();
-        revealedWordLabel.setFont(new Font("Courier New", Font.BOLD, 48)); // Monospaced font for alignment
+        // Adjust font size based on word length
+        int fontSize = game.getWordLength() <= 5 ? 48 : game.getWordLength() == 6 ? 40 : 32;
+        revealedWordLabel.setFont(new Font("Courier New", Font.BOLD, fontSize));
         revealedWordLabel.setHorizontalAlignment(JLabel.CENTER);
 
         panel.add(infoPanel, BorderLayout.NORTH);
