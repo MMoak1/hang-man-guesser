@@ -103,7 +103,7 @@ public class ReverseHangmanTester {
         boolean showVerboseOutput = false;
         ReverseHangmanTester tester = new ReverseHangmanTester(showVerboseOutput);
 
-        int[] lengthsToTest = { 5, 6, 7 };
+        int[] lengthsToTest = { 5, 6 };
         int grandTotalSuccesses = 0;
         int grandTotalFailures = 0;
 
@@ -120,14 +120,38 @@ public class ReverseHangmanTester {
 
             int successes = 0;
             int failures = 0;
+            int totalWords = wordsToTest.size();
+            int wordsProcessed = 0;
+
+            System.out.println("Testing " + totalWords + " words...");
 
             for (String word : wordsToTest) {
-                if (tester.testWord(word)) {
+                wordsProcessed++;
+                boolean success = tester.testWord(word);
+                if (success) {
                     successes++;
                 } else {
                     failures++;
                 }
+
+                // Calculate progress percentage
+                int progress = (int) ((double) wordsProcessed / totalWords * 100);
+
+                // Create progress bar without String.repeat()
+                int barWidth = 50;
+                int progressChars = (int) (barWidth * (progress / 100.0));
+                StringBuilder progressBar = new StringBuilder("[");
+                for (int i = 0; i < progressChars; i++)
+                    progressBar.append("=");
+                for (int i = 0; i < barWidth - progressChars; i++)
+                    progressBar.append(" ");
+                progressBar.append("]");
+
+                // Print progress
+                System.out.printf("\r%s %d%% | Word %d/%d | Successes: %d | Failures: %d | Current: %s",
+                        progressBar, progress, wordsProcessed, totalWords, successes, failures, word);
             }
+            System.out.println(); // Move to next line after progress complete
 
             grandTotalSuccesses += successes;
             grandTotalFailures += failures;

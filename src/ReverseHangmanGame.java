@@ -1,9 +1,10 @@
 import java.util.*;
 
 public class ReverseHangmanGame {
+    // ... all other methods and variables remain the same ...
 
     private List<String> fullWordList;
-    List<String> possibleWords;
+    List<String> possibleWords; // Package-private for the tester
     private Set<Character> guessedLetters;
     private int incorrectGuesses;
     private boolean isGameOver;
@@ -21,55 +22,115 @@ public class ReverseHangmanGame {
         this.guessedLetters = new HashSet<>();
         this.incorrectGuesses = 0;
         this.isGameOver = false;
-        this.statusMessage = "Think of a 5-letter word and I will guess it!";
+        this.statusMessage = "Think of a " + wordLength + "-letter word and I will guess it!";
     }
 
     public char makeGuess() {
         if (isGameOver) {
-            return ' '; // Game is over, no more guesses
-        }
-        if (possibleWords.isEmpty()) {
-            isGameOver = true;
-            statusMessage = "I'm stumped! You win!";
             return ' ';
         }
+        if (possibleWords.isEmpty() || possibleWords.size() == 1) {
+            checkWinCondition();
+            return ' ';
+        }
+        return findMostInformativeGuess();
+    }
 
-        // Count how many words contain each letter
-        Map<Character, Integer> letterWordCounts = new HashMap<>();
-        for (String word : possibleWords) {
-            Set<Character> uniqueLetters = new HashSet<>();
-            for (char c : word.toCharArray()) {
-                uniqueLetters.add(c);
+    /**
+     * The final, superior guessing algorithm.
+     * 1. Uses Minimax to find the guess that minimizes the worst-case outcome.
+     * 2. If there's a tie, it chooses the guess that splits the word list into the
+     * most partitions.
+     */
+    private char findMostInformativeGuess() {
+        char bestGuess = ' ';
+        int minWorstCaseSize = Integer.MAX_VALUE;
+        int maxPartitions = 0; // Our new tie-breaker variable
+
+        // Small optimization for the endgame
+        if (possibleWords.size() <= 2) {
+            for (char c : possibleWords.get(0).toCharArray()) {
+                if (!guessedLetters.contains(c))
+                    return c;
             }
-            for (char c : uniqueLetters) {
-                if (!guessedLetters.contains(c)) {
-                    letterWordCounts.put(c, letterWordCounts.getOrDefault(c, 0) + 1);
+        }
+
+        for (char guessChar = 'A'; guessChar <= 'Z'; guessChar++) {
+            if (guessedLetters.contains(guessChar)) {
+                continue;
+            }
+
+            Map<String, List<String>> outcomes = new HashMap<>();
+            for (String word : possibleWords) {
+                StringBuilder patternBuilder = new StringBuilder();
+                boolean matchFound = false;
+                for (int i = 0; i < word.length(); i++) {
+                    if (word.charAt(i) == guessChar) {
+                        patternBuilder.append(guessChar);
+                        matchFound = true;
+                    } else {
+                        patternBuilder.append('_');
+                    }
+                }
+                String key = matchFound ? patternBuilder.toString() : "NO_MATCH";
+                outcomes.computeIfAbsent(key, k -> new ArrayList<>()).add(word);
+            }
+
+            if (outcomes.isEmpty() || (outcomes.size() == 1 && outcomes.containsKey("NO_MATCH"))) {
+                continue;
+            }
+
+            int worstCaseSizeForThisGuess = 0;
+            for (List<String> group : outcomes.values()) {
+                if (group.size() > worstCaseSizeForThisGuess) {
+                    worstCaseSizeForThisGuess = group.size();
+                }
+            }
+
+            // --- THIS IS THE NEW, CRITICAL LOGIC ---
+            if (worstCaseSizeForThisGuess < minWorstCaseSize) {
+                // A new best guess is found.
+                minWorstCaseSize = worstCaseSizeForThisGuess;
+                maxPartitions = outcomes.size();
+                bestGuess = guessChar;
+            } else if (worstCaseSizeForThisGuess == minWorstCaseSize) {
+                // A tie in the worst-case size! Use the tie-breaker.
+                if (outcomes.size() > maxPartitions) {
+                    // This guess splits the list into more groups, so it's better.
+                    maxPartitions = outcomes.size();
+                    bestGuess = guessChar;
                 }
             }
         }
 
-        return findMostFrequentChar(letterWordCounts);
+        if (bestGuess == ' ') { // Fallback if no guess was chosen
+            for (char c = 'A'; c <= 'Z'; c++) {
+                if (!guessedLetters.contains(c))
+                    return c;
+            }
+        }
+        return bestGuess;
     }
+
+    // --- All other methods (processCorrectGuess, processIncorrectGuess, etc.)
+    // remain the same as the previous version ---
 
     public void processCorrectGuess(char letter, int[] positions) {
         guessedLetters.add(letter);
-
-        // Filter out words that don't have the letter in the specified positions
         possibleWords.removeIf(word -> {
+            long actualCount = 0;
+            for (char c : word.toCharArray()) {
+                if (c == letter)
+                    actualCount++;
+            }
+            if (actualCount != positions.length)
+                return true;
             for (int pos : positions) {
-                if (pos < 1 || pos > wordLength || word.charAt(pos - 1) != letter) {
-                    return true; // Remove if invalid position or letter not in spot
-                }
+                if (word.charAt(pos - 1) != letter)
+                    return true;
             }
             return false;
         });
-
-        // Filter out words that have a different number of occurrences of the letter
-        possibleWords.removeIf(word -> {
-            long count = word.chars().filter(ch -> ch == letter).count();
-            return count != positions.length;
-        });
-
         checkWinCondition();
     }
 
@@ -80,10 +141,7 @@ public class ReverseHangmanGame {
     public void processIncorrectGuess(char letter) {
         guessedLetters.add(letter);
         incorrectGuesses++;
-
-        // Remove all words containing the incorrect letter
         possibleWords.removeIf(word -> word.indexOf(letter) != -1);
-
         if (incorrectGuesses >= 6) {
             isGameOver = true;
             statusMessage = "Darn! I couldn't guess your word. You win!";
@@ -105,21 +163,6 @@ public class ReverseHangmanGame {
         }
     }
 
-    private char findMostFrequentChar(Map<Character, Integer> letterWordCounts) {
-        if (letterWordCounts.isEmpty()) {
-            // Fallback to any unguessed letter if no counts available
-            for (char c = 'A'; c <= 'Z'; c++) {
-                if (!guessedLetters.contains(c))
-                    return c;
-            }
-        }
-
-        // Find the character that appears in the most words
-        return Collections.max(letterWordCounts.entrySet(), Map.Entry.comparingByValue()).getKey();
-    }
-
-    // --- Getters for the GUI to query state ---
-
     public int getIncorrectGuesses() {
         return incorrectGuesses;
     }
@@ -133,7 +176,7 @@ public class ReverseHangmanGame {
     }
 
     public String getFinalWord() {
-        if (possibleWords.size() == 1) {
+        if (isGameOver && possibleWords.size() == 1) {
             return possibleWords.get(0);
         }
         return null;
