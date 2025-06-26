@@ -34,14 +34,21 @@ public class ReverseHangmanGame {
             return ' ';
         }
 
-        // Frequency analysis on remaining possible words
-        StringBuilder bigString = new StringBuilder();
+        // Count how many words contain each letter
+        Map<Character, Integer> letterWordCounts = new HashMap<>();
         for (String word : possibleWords) {
-            bigString.append(word);
+            Set<Character> uniqueLetters = new HashSet<>();
+            for (char c : word.toCharArray()) {
+                uniqueLetters.add(c);
+            }
+            for (char c : uniqueLetters) {
+                if (!guessedLetters.contains(c)) {
+                    letterWordCounts.put(c, letterWordCounts.getOrDefault(c, 0) + 1);
+                }
+            }
         }
 
-        char[] allChars = bigString.toString().toCharArray();
-        return findMostFrequentChar(allChars);
+        return findMostFrequentChar(letterWordCounts);
     }
 
     public void processCorrectGuess(char letter, int[] positions) {
@@ -98,29 +105,17 @@ public class ReverseHangmanGame {
         }
     }
 
-    private char findMostFrequentChar(char[] arr) {
-        if (arr.length == 0)
-            return ' ';
-
-        Map<Character, Integer> freqMap = new HashMap<>();
-        for (char c : arr) {
-            // Only consider letters that have not been guessed yet
-            if (!guessedLetters.contains(c)) {
-                freqMap.put(c, freqMap.getOrDefault(c, 0) + 1);
-            }
-        }
-
-        if (freqMap.isEmpty()) {
-            // This can happen if all remaining letters in possible words have been guessed
-            // Fallback to any unguessed letter
+    private char findMostFrequentChar(Map<Character, Integer> letterWordCounts) {
+        if (letterWordCounts.isEmpty()) {
+            // Fallback to any unguessed letter if no counts available
             for (char c = 'A'; c <= 'Z'; c++) {
                 if (!guessedLetters.contains(c))
                     return c;
             }
         }
 
-        // Find the character with the highest frequency
-        return Collections.max(freqMap.entrySet(), Map.Entry.comparingByValue()).getKey();
+        // Find the character that appears in the most words
+        return Collections.max(letterWordCounts.entrySet(), Map.Entry.comparingByValue()).getKey();
     }
 
     // --- Getters for the GUI to query state ---
