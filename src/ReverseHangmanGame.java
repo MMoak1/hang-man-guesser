@@ -3,7 +3,7 @@ import java.util.*;
 public class ReverseHangmanGame {
 
     private List<String> fullWordList;
-    private List<String> possibleWords;
+    List<String> possibleWords;
     private Set<Character> guessedLetters;
     private int incorrectGuesses;
     private boolean isGameOver;
