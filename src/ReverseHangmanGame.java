@@ -8,9 +8,11 @@ public class ReverseHangmanGame {
     private int incorrectGuesses;
     private boolean isGameOver;
     private String statusMessage;
+    private int wordLength;
 
-    public ReverseHangmanGame() {
-        this.fullWordList = WordLoader.loadWords();
+    public ReverseHangmanGame(int wordLength) {
+        this.wordLength = wordLength;
+        this.fullWordList = WordLoader.loadWords(wordLength);
         startNewGame();
     }
 
@@ -48,8 +50,8 @@ public class ReverseHangmanGame {
         // Filter out words that don't have the letter in the specified positions
         possibleWords.removeIf(word -> {
             for (int pos : positions) {
-                if (word.charAt(pos - 1) != letter) {
-                    return true; // Remove if letter not in a required spot
+                if (pos < 1 || pos > wordLength || word.charAt(pos - 1) != letter) {
+                    return true; // Remove if invalid position or letter not in spot
                 }
             }
             return false;
@@ -62,6 +64,10 @@ public class ReverseHangmanGame {
         });
 
         checkWinCondition();
+    }
+
+    public int getWordLength() {
+        return wordLength;
     }
 
     public void processIncorrectGuess(char letter) {
