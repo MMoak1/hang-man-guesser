@@ -339,6 +339,12 @@ public class ReverseHangmanGUI extends JFrame {
             positionPanel.setVisible(false);
 
             // Check if we've narrowed it down to one word
+            // Update the displayed word with correct letters
+            for (int pos : correctPositions) {
+                currentWordState[pos - 1] = mostFrequent;
+            }
+            updateWordDisplay();
+
             if (wordList.size() == 1) {
                 gameOver = true;
                 String correctWord = wordList.get(0);
