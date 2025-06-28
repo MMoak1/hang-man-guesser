@@ -9,10 +9,13 @@ public class ReverseHangmanGame {
     private boolean isGameOver;
     private String statusMessage;
     private int wordLength;
+    private Map<String, Map<Character, Integer>> letterPatterns;
 
     public ReverseHangmanGame(int wordLength) {
         this.wordLength = wordLength;
         this.fullWordList = WordLoader.loadWords(wordLength);
+        this.letterPatterns = new HashMap<>();
+        precomputeLetterPatterns();
         startNewGame();
     }
 
@@ -47,20 +50,22 @@ public class ReverseHangmanGame {
     public void processCorrectGuess(char letter, int[] positions) {
         guessedLetters.add(letter);
 
-        // Filter out words that don't have the letter in the specified positions
+        // Filter out words that don't match the letter pattern
         possibleWords.removeIf(word -> {
+            Integer pattern = letterPatterns.get(word).get(letter);
+            if (pattern == null) {
+                return true; // Word doesn't contain this letter
+            }
+
+            // Check if positions match
             for (int pos : positions) {
-                if (pos < 1 || pos > wordLength || word.charAt(pos - 1) != letter) {
-                    return true; // Remove if invalid position or letter not in spot
+                if ((pattern & (1 << (pos - 1))) == 0) {
+                    return true; // Letter not in specified position
                 }
             }
-            return false;
-        });
 
-        // Filter out words that have a different number of occurrences of the letter
-        possibleWords.removeIf(word -> {
-            long count = word.chars().filter(ch -> ch == letter).count();
-            return count != positions.length;
+            // Check count matches
+            return Integer.bitCount(pattern) != positions.length;
         });
 
         checkWinCondition();
@@ -95,6 +100,17 @@ public class ReverseHangmanGame {
                 isGameOver = true;
                 statusMessage = "I'm stumped! Your word might not be in my list. You win!";
             }
+        }
+    }
+
+    private void precomputeLetterPatterns() {
+        for (String word : fullWordList) {
+            Map<Character, Integer> patterns = new HashMap<>();
+            for (int i = 0; i < word.length(); i++) {
+                char c = word.charAt(i);
+                patterns.merge(c, 1 << i, (old, newVal) -> old | newVal);
+            }
+            letterPatterns.put(word, patterns);
         }
     }
 
