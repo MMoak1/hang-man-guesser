@@ -121,13 +121,37 @@ public class ReverseHangmanTester {
             int successes = 0;
             int failures = 0;
 
+            int totalWords = wordsToTest.size();
+            int wordsProcessed = 0;
+
+            System.out.println("\nProgress:");
+            System.out.print("[");
+            for (int i = 0; i < 50; i++)
+                System.out.print(" ");
+            System.out.print("] 0%");
+
             for (String word : wordsToTest) {
                 if (tester.testWord(word)) {
                     successes++;
                 } else {
                     failures++;
                 }
+                wordsProcessed++;
+
+                // Update progress every 2% or at the end
+                if (wordsProcessed % Math.max(1, totalWords / 50) == 0 || wordsProcessed == totalWords) {
+                    int progress = (int) ((double) wordsProcessed / totalWords * 100);
+                    int bars = (int) ((double) wordsProcessed / totalWords * 50);
+
+                    // Move cursor back to start of progress line
+                    System.out.print("\r[");
+                    for (int i = 0; i < 50; i++) {
+                        System.out.print(i < bars ? "=" : " ");
+                    }
+                    System.out.print("] " + progress + "%");
+                }
             }
+            System.out.println(); // New line after progress completes
 
             grandTotalSuccesses += successes;
             grandTotalFailures += failures;
