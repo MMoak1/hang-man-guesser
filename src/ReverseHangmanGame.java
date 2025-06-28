@@ -1,15 +1,16 @@
 import java.util.*;
 
 public class ReverseHangmanGame {
-
     private List<String> fullWordList;
-    List<String> possibleWords;
+    private List<String> possibleWords;
     private Set<Character> guessedLetters;
     private int incorrectGuesses;
     private boolean isGameOver;
     private String statusMessage;
     private int wordLength;
     private Map<String, Map<Character, Integer>> letterPatterns;
+    private char[] currentWordState;
+    private char lastGuess;
 
     public ReverseHangmanGame(int wordLength) {
         this.wordLength = wordLength;
@@ -24,7 +25,9 @@ public class ReverseHangmanGame {
         this.guessedLetters = new HashSet<>();
         this.incorrectGuesses = 0;
         this.isGameOver = false;
-        this.statusMessage = "Think of a 5-letter word and I will guess it!";
+        this.statusMessage = "Think of a " + wordLength + "-letter word and I will guess it!";
+        this.currentWordState = new char[wordLength];
+        Arrays.fill(currentWordState, '_');
     }
 
     public char makeGuess() {
@@ -44,7 +47,8 @@ public class ReverseHangmanGame {
         }
 
         char[] allChars = bigString.toString().toCharArray();
-        return findMostFrequentChar(allChars);
+        lastGuess = findMostFrequentChar(allChars);
+        return lastGuess;
     }
 
     public void processCorrectGuess(char letter, int[] positions) {
@@ -68,6 +72,10 @@ public class ReverseHangmanGame {
             return Integer.bitCount(pattern) != positions.length;
         });
 
+        // Update current word state with correct letters
+        for (int pos : positions) {
+            currentWordState[pos - 1] = letter;
+        }
         checkWinCondition();
     }
 
@@ -158,5 +166,17 @@ public class ReverseHangmanGame {
             return possibleWords.get(0);
         }
         return null;
+    }
+
+    public char[] getCurrentWordState() {
+        return currentWordState;
+    }
+
+    public char getLastGuess() {
+        return lastGuess;
+    }
+
+    public int getRemainingWordCount() {
+        return possibleWords.size();
     }
 }

@@ -1,8 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
 
-import java.util.*;
-
 public class ReverseHangmanGUI extends JFrame {
 
     // GUI Components
@@ -20,15 +18,8 @@ public class ReverseHangmanGUI extends JFrame {
     private JLabel wrongGuessesLabel;
     private JLabel wordDisplayLabel;
 
-    // Game state
-    private ArrayList<String> wordList;
-    private char[] currentWordState;
-    private String[] rightLetters;
-    private int checker;
-    private int incorrectGuess;
-    private boolean gameOver;
-    private char mostFrequent;
-    private int wordLength;
+    // Game instance
+    private ReverseHangmanGame game;
 
     // Hangman drawings from your original code
     private String[] Hangmanpics = {
@@ -53,14 +44,14 @@ public class ReverseHangmanGUI extends JFrame {
                 options,
                 options[0]);
 
-        wordLength = 5 + selection; // 5, 6, or 7
-        loadWordList();
+        int wordLength = 5 + selection; // 5, 6, or 7
+        game = new ReverseHangmanGame(wordLength);
         initializeGUI();
         startNewGame();
-    }
 
-    private void loadWordList() {
-        wordList = new ArrayList<>(WordLoader.loadWords(wordLength));
+        // Make initial guess and update UI
+        makeComputerGuess();
+        updateUI();
     }
 
     private void initializeGUI() {
@@ -90,7 +81,8 @@ public class ReverseHangmanGUI extends JFrame {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         titleLabel.setForeground(Color.BLUE);
 
-        statusLabel = new JLabel("Think of a " + wordLength + "-letter word and I will guess it!", JLabel.CENTER);
+        statusLabel = new JLabel("Think of a " + game.getWordLength() + "-letter word and I will guess it!",
+                JLabel.CENTER);
         statusLabel.setFont(new Font("Arial", Font.PLAIN, 16));
 
         panel.add(titleLabel, BorderLayout.NORTH);
@@ -233,68 +225,33 @@ public class ReverseHangmanGUI extends JFrame {
     }
 
     private void startNewGame() {
-        // Reset game state
-        wordList = new ArrayList<>(wordList); // Reset the word list
-        loadWordList(); // Reload the full word list
-        rightLetters = new String[26];
-        checker = 0;
-        incorrectGuess = 0;
-        gameOver = false;
-        currentWordState = new char[wordLength];
-        Arrays.fill(currentWordState, '_');
-        updateWordDisplay();
+        game.startNewGame();
+        updateUI();
 
-        // Update display
-        hangmanDisplay.setText(Hangmanpics[0]);
+        // Reset UI elements
         computerGuessLabel.setText("?");
-        statusLabel.setText("Think of a " + wordLength + "-letter word and I will guess it!");
-        wrongGuessesLabel.setText("0");
-        instructionLabel.setText("Ready when you are! Click 'Make Guess' to start.");
+        yesButton.setEnabled(false);
+        noButton.setEnabled(false);
+        positionPanel.setVisible(false);
 
-        // Reset UI
+        // Make initial guess
+        makeComputerGuess();
+    }
+
+    private void makeComputerGuess() {
+        char guess = game.makeGuess();
+        if (guess == ' ') {
+            updateUI();
+            return;
+        }
+
+        computerGuessLabel.setText(String.valueOf(guess));
+        instructionLabel.setText("Is the letter '" + guess + "' in your word?");
         yesButton.setEnabled(true);
         noButton.setEnabled(true);
         positionPanel.setVisible(false);
 
-        // Make first guess
-        makeComputerGuess();
-
-        pack();
-    }
-
-    private void makeComputerGuess() {
-        if (gameOver || wordList.isEmpty()) {
-            return;
-        }
-
-        // Your original frequency analysis logic
-        String BigString = "";
-        for (String word : wordList) {
-            BigString += word;
-        }
-
-        // Remove already guessed letters
-        for (int i = 0; i < checker; i++) {
-            if (rightLetters[i] != null) {
-                BigString = BigString.replaceAll(rightLetters[i], "");
-            }
-        }
-
-        if (BigString.isEmpty()) {
-            gameOver = true;
-            statusLabel.setText("I'm stumped! You win!");
-            return;
-        }
-
-        char[] bigStringChars = BigString.toCharArray();
-        mostFrequent = mostFrequent(bigStringChars, BigString.length());
-
-        computerGuessLabel.setText(String.valueOf(mostFrequent));
-        instructionLabel.setText("Is the letter '" + mostFrequent + "' in your word?");
-
-        // Enable response buttons
-        yesButton.setEnabled(true);
-        noButton.setEnabled(true);
+        pack(); // Ensure UI updates properly
     }
 
     private void handleCorrectGuess() {
@@ -323,77 +280,23 @@ public class ReverseHangmanGUI extends JFrame {
             int[] correctPositions = new int[numCorrect];
             for (int i = 0; i < numCorrect; i++) {
                 correctPositions[i] = Integer.parseInt(positions[i]);
-                if (correctPositions[i] < 1 || correctPositions[i] > wordLength) {
-                    JOptionPane.showMessageDialog(this, "Positions must be between 1 and " + wordLength + "!");
+                if (correctPositions[i] < 1 || correctPositions[i] > game.getWordLength()) {
+                    JOptionPane.showMessageDialog(this,
+                            "Positions must be between 1 and " + game.getWordLength() + "!");
                     return;
                 }
             }
 
-            // Your original logic for processing correct guesses
-            processCorrectGuessLogic(numCorrect, correctPositions);
-
-            // Record this letter as guessed
-            rightLetters[checker] = String.valueOf(mostFrequent);
-            checker++;
-
+            game.processCorrectGuess(game.getLastGuess(), correctPositions);
             positionPanel.setVisible(false);
+            updateUI();
 
-            // Check if we've narrowed it down to one word
-            // Update the displayed word with correct letters
-            for (int pos : correctPositions) {
-                currentWordState[pos - 1] = mostFrequent;
-            }
-            updateWordDisplay();
-
-            if (wordList.size() == 1) {
-                gameOver = true;
-                String correctWord = wordList.get(0);
-                statusLabel.setText("Yes! I did it! The word was: " + correctWord);
-                computerGuessLabel.setText(correctWord);
-                instructionLabel.setText("I guessed your word!");
-                currentWordState = correctWord.toCharArray();
-                updateWordDisplay();
-            } else {
+            if (!game.isGameOver()) {
                 makeComputerGuess();
             }
 
-            pack();
-
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Please enter valid numbers!");
-        }
-    }
-
-    private void processCorrectGuessLogic(int numCorrect, int[] correctPositions) {
-        // Your original logic for filtering words when guess is correct
-
-        // Remove words that don't have the letter in the correct positions
-        for (int j = 0; j < numCorrect; j++) {
-            for (int i = 0; i < wordList.size(); i++) {
-                char[] wordChars = wordList.get(i).toCharArray();
-
-                if (wordChars[correctPositions[j] - 1] != mostFrequent) {
-                    wordList.remove(i);
-                    i--;
-                }
-            }
-        }
-
-        // Remove words that have the letter in other positions
-        for (int i = 0; i < wordList.size(); i++) {
-            char[] wordChars = wordList.get(i).toCharArray();
-            int letterCount = 0;
-
-            for (int j = 0; j < wordChars.length; j++) {
-                if (wordChars[j] == mostFrequent) {
-                    letterCount++;
-                }
-            }
-
-            if (letterCount != numCorrect) {
-                wordList.remove(i);
-                i--;
-            }
         }
     }
 
@@ -401,70 +304,41 @@ public class ReverseHangmanGUI extends JFrame {
         yesButton.setEnabled(false);
         noButton.setEnabled(false);
 
-        // Your original logic for incorrect guesses
-        for (int i = 0; i < wordList.size(); i++) {
-            char[] wordChars = wordList.get(i).toCharArray();
-            boolean containsLetter = false;
+        game.processIncorrectGuess(game.getLastGuess());
+        updateUI();
 
-            for (char c : wordChars) {
-                if (c == mostFrequent) {
-                    containsLetter = true;
-                    break;
-                }
-            }
-
-            if (containsLetter) {
-                wordList.remove(i);
-                i--;
-            }
-        }
-
-        // Record this letter as guessed
-        rightLetters[checker] = String.valueOf(mostFrequent);
-        checker++;
-
-        incorrectGuess++;
-        wrongGuessesLabel.setText(String.valueOf(incorrectGuess));
-        hangmanDisplay.setText(Hangmanpics[incorrectGuess]);
-
-        if (incorrectGuess >= 6) {
-            gameOver = true;
-            statusLabel.setText("Darn! I couldn't guess your word. You win!");
-            instructionLabel.setText("I'm all out of guesses!");
-        } else {
-            statusLabel.setText("Darn! I'll try better next time :(");
+        if (!game.isGameOver()) {
             makeComputerGuess();
         }
     }
 
-    // Your original mostFrequent method
-    static char mostFrequent(char arr[], int n) {
-        Arrays.sort(arr);
-
-        int max_count = 1;
-        char res = arr[0];
-        int curr_count = 1;
-
-        for (int i = 1; i < n; i++) {
-            if (arr[i] == arr[i - 1])
-                curr_count++;
-            else
-                curr_count = 1;
-
-            if (curr_count > max_count) {
-                max_count = curr_count;
-                res = arr[i - 1];
-            }
-        }
-        return res;
-    }
-
     private void updateWordDisplay() {
+        char[] wordState = game.getCurrentWordState();
         StringBuilder display = new StringBuilder();
-        for (char c : currentWordState) {
+        for (char c : wordState) {
             display.append(c).append(' ');
         }
         wordDisplayLabel.setText(display.toString().trim());
+    }
+
+    private void updateUI() {
+        // Update hangman display
+        hangmanDisplay.setText(Hangmanpics[game.getIncorrectGuesses()]);
+
+        // Update status labels
+        statusLabel.setText(game.getStatusMessage());
+        wrongGuessesLabel.setText(String.valueOf(game.getIncorrectGuesses()));
+
+        // Update word display
+        updateWordDisplay();
+
+        // Update computer guess display
+        if (game.isGameOver() && game.getFinalWord() != null) {
+            computerGuessLabel.setText(game.getFinalWord());
+            instructionLabel.setText("I guessed your word!");
+        } else if (game.isGameOver()) {
+            computerGuessLabel.setText("?");
+        }
     }
 
     public static void main(String[] args) {
